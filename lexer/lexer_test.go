@@ -22,6 +22,9 @@ func TestNextToken(t *testing.T) {
 	} else {
 		return false;
 	}
+
+	10 == 10;
+	10 != 9;
 	`
 	tests := []struct {
 		expectedType    token.TokenType
@@ -101,6 +104,16 @@ func TestNextToken(t *testing.T) {
 		{token.FALSE, "false"},
 		{token.SEMICOLON, ";"},
 		{token.RBRACE, "}"},
+		// 10 == 10;
+		{token.INT, "10"},
+		{token.EQ, "=="},
+		{token.INT, "10"},
+		{token.SEMICOLON, ";"},
+		// 10 != 9;
+		{token.INT, "10"},
+		{token.NEQ, "!="},
+		{token.INT, "9"},
+		{token.SEMICOLON, ";"},
 		// EOF
 		{token.EOF, ""},
 	}
@@ -108,7 +121,6 @@ func TestNextToken(t *testing.T) {
 	l := New(input)
 
 	for i, tt := range tests {
-		t.Logf("Test %d: %d", i, l.position)
 		tok := l.NextToken()
 
 		if tok.Type != tt.expectedType {

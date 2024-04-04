@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"monkey/ast"
 	"monkey/lexer"
 	"monkey/token"
@@ -11,11 +12,16 @@ type Parser struct {
 
 	curToken  token.Token
 	peekToken token.Token
+	errors    []string
 }
 
 func New(l *lexer.Lexer) *Parser {
-	p := &Parser{l: l}
+	p := &Parser{
+		l:      l,
+		errors: []string{},
+	}
 
+	// Advance to populate curToken and peekToken
 	p.nextToken()
 	p.nextToken()
 
@@ -28,38 +34,80 @@ func (p *Parser) nextToken() {
 }
 
 func (p *Parser) ParseProgram() *ast.Program {
-	return nil
+	program := &ast.Program{}
+	program.Statements = []ast.Statement{}
+
+	for p.curToken.Type != token.EOF {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			program.Statements = append(program.Statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return program
 }
 
-// func (p *Parser) ParseProgram() *ast.Program {
-// 	program = newProgramASTNode()
+func (p *Parser) parseStatement() ast.Statement {
+	switch p.curToken.Type {
+	case token.LET:
+		return p.parseLetStatement()
+	default:
+		return nil
+	}
+}
 
-// 	advanceTokens()
+func (p *Parser) parseLetStatement() *ast.LetStatement {
+	stmt := &ast.LetStatement{Token: p.curToken}
 
-// 	// Until the lexer reaches EOF, parse statements and add them to the program
-// 	// If a parsed token is not a statement, do not add to program
-// 	for currentToken() != EOF_TOKEN {
-// 		statement = null
+	// After let, expect identifier
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
 
-// 		if currentToken() == LET_TOKEN {
-// 			statement = parseLetStatement()
-// 		} else if currentToken() == RETURN_TOKEN {
-// 			statement = parseReturnStatement()
-// 		} else if currentToken == IF_TOKEN {
-// 			statement = parseIfStatement()
-// 		}
+	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
-// 		if statement != null {
-// 			program.Statements.push(statement)
-// 		}
+	// After identifier, expect '='
+	if !p.expectPeek(token.ASSIGN) {
+		return nil
+	}
 
-// 		advanceTokens()
-// 	}
+	// TODO: We're skipping expressions until we encounter a semicolon
+	// Expect a semicolon at the end.
+	for !p.curTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
 
-// 	return program
-// }
+	return stmt
+}
 
-// func parseLetStatement() {
-// 	advanceTokens()
+func (p *Parser) curTokenIs(t token.TokenType) bool {
+	return p.curToken.Type == t
+}
 
-// }
+func (p *Parser) peekTokenIs(t token.TokenType) bool {
+	return p.peekToken.Type == t
+}
+
+// expectPeek checks if the next token is of the specified type.
+// If it is, it advances to the next token and returns true.
+// Otherwise, it returns false.
+// Could call it consumeIfPeekTokenIs
+func (p *Parser) expectPeek(t token.TokenType) bool {
+	if p.peekTokenIs(t) {
+		p.nextToken()
+		return true
+	} else {
+		p.peekError(t)
+		return false
+	}
+}
+
+func (p *Parser) Errors() []string {
+	return p.errors
+}
+
+func (p *Parser) peekError(t token.TokenType) {
+	msg := fmt.Sprintf("expected next token to be %s, got %s instead", t, p.peekToken.Type)
+	p.errors = append(p.errors, msg)
+}

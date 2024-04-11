@@ -181,6 +181,20 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	expression := &ast.InfixExpression{
+		Token:    p.curToken,
+		Left:     left,
+		Operator: p.curToken.Literal,
+	}
+
+	p.nextToken()
+
+	expression.Right = p.parseExpression(p.getPrecedence())
+
+	return expression
+}
+
 // Helpers
 
 func (p *Parser) curTokenIs(t token.TokenType) bool {
@@ -189,6 +203,22 @@ func (p *Parser) curTokenIs(t token.TokenType) bool {
 
 func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
+}
+
+func (p *Parser) getPrecedence() int {
+	switch p.curToken.Type {
+	case token.EQ, token.NEQ:
+		return EQUALS
+	case token.LT, token.GT:
+		return LESSGREATER
+	case token.PLUS, token.MINUS:
+		return SUM
+	case token.SLASH, token.ASTERISK:
+		return PRODUCT
+	case token.LPAREN:
+		return CALL
+	}
+	return LOWEST
 }
 
 // expectPeek checks if the next token is of the specified type.

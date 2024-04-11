@@ -29,6 +29,8 @@ const (
 	EQ  = "=="
 	NEQ = "!="
 
+	POWER = "**"
+
 	//Delimiters
 	COMMA     = ","
 	SEMICOLON = ";"

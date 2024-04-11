@@ -69,8 +69,6 @@ func (es *ExpressionStatement) String() string {
 		out.WriteString(es.Expression.String())
 	}
 
-	out.WriteString(";")
-
 	return out.String()
 }
 

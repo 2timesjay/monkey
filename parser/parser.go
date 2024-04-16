@@ -246,7 +246,7 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseIfExpression() ast.Expression {
-
+	return nil
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {
@@ -263,7 +263,10 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 }
 
 func (p *Parser) parseBlockStatement() ast.BlockStatement {
-
+	return ast.BlockStatement{
+		Token:      p.curToken,
+		Statements: []ast.Statement{},
+	}
 }
 
 // Helpers

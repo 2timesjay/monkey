@@ -12,6 +12,7 @@ func TestLetStatement(t *testing.T) {
 	let x = 5;
 	let y = 10;
 	let foobar = 838383;
+	let z = 5 + 5;
 	`
 
 	l := lexer.New(input)
@@ -23,22 +24,24 @@ func TestLetStatement(t *testing.T) {
 	if program == nil {
 		t.Fatalf("ParseProgram() returned nil")
 	}
-	expected_statements := 3
+	expected_statements := 4
 	if len(program.Statements) != expected_statements {
 		t.Fatalf("program.Statements Does not contain %d statements. got=%d", expected_statements, (program.Statements))
 	}
 
 	test := []struct {
 		expectedIdentifier string
+		expectedExpression string
 	}{
-		{"x"},
-		{"y"},
-		{"foobar"},
+		{"x", "5"},
+		{"y", "10"},
+		{"foobar", "838383"},
+		{"z", "(5 + 5)"},
 	}
 
 	for i, tt := range test {
 		stmt := program.Statements[i]
-		if !testLetStatement(t, stmt, tt.expectedIdentifier) {
+		if !testLetStatement(t, stmt, tt.expectedIdentifier, tt.expectedExpression) {
 			return
 		}
 	}
@@ -57,7 +60,7 @@ func checkParseErrors(t *testing.T, p *Parser) {
 	t.FailNow()
 }
 
-func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
+func testLetStatement(t *testing.T, s ast.Statement, name string, exp string) bool {
 	if s.TokenLiteral() != "let" {
 		// %q is a verb for formatting strings safely escapes them
 		t.Errorf("s.TokenLiteral not 'let'. got=%q", s.TokenLiteral())
@@ -78,6 +81,12 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 	if letStmt.Name.TokenLiteral() != name {
 		t.Errorf("letStmt.Name.TokenLiteral() not '%s'. got=%s",
 			name, letStmt.Name.TokenLiteral())
+		return false
+	}
+
+	if letStmt.Value.String() != exp {
+		t.Errorf("letStmt.Value.String() not '%s'. got=%s",
+			exp, letStmt.Value.String())
 		return false
 	}
 
@@ -107,11 +116,11 @@ func TestReturnStatement(t *testing.T) {
 
 	// TODO: Implement and update
 	test := []struct {
-		expectedReturnValue ast.Expression
+		expectedReturnValue string
 	}{
-		{nil},
-		{nil},
-		{nil},
+		{"5"},
+		{"add(10, 10)"},
+		{"838383"},
 	}
 
 	for i, tt := range test {
@@ -122,7 +131,7 @@ func TestReturnStatement(t *testing.T) {
 	}
 }
 
-func testReturnStatement(t *testing.T, s ast.Statement, returnValue ast.Expression) bool {
+func testReturnStatement(t *testing.T, s ast.Statement, returnValue string) bool {
 	if s.TokenLiteral() != "return" {
 		// %q is a verb for formatting strings safely escapes them
 		t.Errorf("s.TokenLiteral not 'let'. got=%q", s.TokenLiteral())
@@ -134,9 +143,9 @@ func testReturnStatement(t *testing.T, s ast.Statement, returnValue ast.Expressi
 		return false
 	}
 
-	if returnStmt.ReturnValue != returnValue {
-		t.Errorf("returnStmt.ReturnValue not '%s'. got=%s",
-			returnStmt, returnValue)
+	if returnStmt.ReturnValue.String() != returnValue {
+		t.Errorf("returnStmt.ReturnValue not '%s'. got=%s for %s",
+			returnValue, returnStmt.ReturnValue.String(), s.String())
 		return false
 	}
 
@@ -715,8 +724,12 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		},
 		{
 			"add(1,2 + 3, 4 * 5)",
-			"(add(1, (2 + 3), (4 * 5)))",
-		}
+			"add(1, (2 + 3), (4 * 5))",
+		},
+		{
+			"a + add(b) / c",
+			"(a + (add(b) / c))",
+		},
 	}
 
 	for _, tt := range tests {

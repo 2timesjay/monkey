@@ -322,12 +322,12 @@ func testBooleanLiteral(t *testing.T, bl ast.Expression, value bool) bool {
 func testIdentifier(t *testing.T, exp ast.Expression, value string) bool {
 	ident, ok := exp.(*ast.Identifier)
 	if !ok {
-		t.Fatalf("exp not *ast.Identifier. got=%T", exp)
+		t.Fatalf("exp not *ast.Identifier. got=%T, %s", exp, exp.String())
 		return false
 	}
 
 	if ident.Value != value {
-		t.Errorf("exp not *ast.Identifier. got=%T", exp)
+		t.Errorf("exp value not %s. got=%s, %s", value, exp, exp.String())
 		return false
 	}
 
@@ -611,7 +611,7 @@ func TestFunctionParameterParsing(t *testing.T) {
 }
 
 func TestCallExpressionParsing(t *testing.T) {
-	input := `add(1, 2 * 3, 4 + 5)`
+	input := `add(1, 2 * 3, 4 + 5);`
 
 	l := lexer.New(input)
 	p := New(l)
@@ -645,7 +645,7 @@ func TestCallExpressionParsing(t *testing.T) {
 			len(call.Arguments))
 	}
 
-	testLiteralExpression(t, call.Arguments[0], "1")
+	testLiteralExpression(t, call.Arguments[0], 1)
 	testInfixExpression(t, call.Arguments[1], 2, "*", 3)
 	testInfixExpression(t, call.Arguments[2], 4, "+", 5)
 }
